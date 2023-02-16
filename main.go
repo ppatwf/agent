@@ -123,6 +123,7 @@ func main() {
 			},
 		},
 		clicommand.BootstrapCommand,
+		clicommand.ExecJobCommand,
 	}
 
 	app.ErrWriter = os.Stderr
