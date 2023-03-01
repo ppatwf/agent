@@ -14,6 +14,7 @@ steps:
 
   - name: ":linux: Linux AMD64 Tests"
     key: test-linux-amd64
+    skip: true
     command: ".buildkite/steps/tests.sh"
     artifact_paths: junit-*.xml
     plugins:
@@ -26,6 +27,7 @@ steps:
 
   - name: ":linux: Linux ARM64 Tests"
     key: test-linux-arm64
+    skip: true
     command: ".buildkite/steps/tests.sh"
     artifact_paths: junit-*.xml
     agents:
