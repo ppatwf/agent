@@ -81,6 +81,9 @@ docker buildx build --progress plain --builder "$builder_name" --tag "$image_tag
 .buildkite/steps/test-docker-image.sh "$variant" "$image_tag" "$(uname -m)"
 
 if [[ $push == "true" ]] ; then
+  echo "--- Logging into ECR (again) :ecr:"
+  aws ecr get-login-password | docker login --username AWS --password-stdin 445615400570.dkr.ecr.us-east-1.amazonaws.com
+
   echo "--- Pushing to ECR :ecr:"
   # Do another build with all architectures. The layers should be cached from the previous build
   # with all architectures.
