@@ -56,16 +56,16 @@ if [[ -z "$image_tag" ]] ; then
   echo "Docker Image Tag for $variant: $image_tag"
 fi
 
-builder_name=$(docker buildx create --use)
-# shellcheck disable=SC2064 # we want the current $builder_name to be trapped, not the runtime one
-trap "docker buildx rm $builder_name || true" EXIT
-
 # Needed for buildking multiarch
 # See https://github.com/docker/buildx/issues/314
 QEMU_VERSION=6.2.0
 echo "--- Installing QEMU $QEMU_VERSION"
 docker run --privileged --userns=host --rm "tonistiigi/binfmt:qemu-v$QEMU_VERSION" --uninstall qemu-*
 docker run --privileged --userns=host --rm "tonistiigi/binfmt:qemu-v$QEMU_VERSION" --install all
+
+builder_name=$(docker buildx create --use)
+# shellcheck disable=SC2064 # we want the current $builder_name to be trapped, not the runtime one
+trap "docker buildx rm $builder_name || true" EXIT
 
 echo "--- Building :docker: $image_tag"
 cp -a packaging/linux/root/usr/share/buildkite-agent/hooks/ "${packaging_dir}/hooks/"
@@ -81,9 +81,6 @@ docker buildx build --progress plain --builder "$builder_name" --tag "$image_tag
 .buildkite/steps/test-docker-image.sh "$variant" "$image_tag" "$(uname -m)"
 
 if [[ $push == "true" ]] ; then
-  echo "--- Logging into ECR (again) :ecr:"
-  aws ecr get-login-password | docker login --username AWS --password-stdin 445615400570.dkr.ecr.us-east-1.amazonaws.com
-
   echo "--- Pushing to ECR :ecr:"
   # Do another build with all architectures. The layers should be cached from the previous build
   # with all architectures.
