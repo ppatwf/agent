@@ -159,9 +159,6 @@ steps:
             - "ubuntu-20.04"
             - "ubuntu-22.04"
             - "sidecar"
-        plugins:
-          - ecr#v2.7.0:
-              login: true
 
   - group: ":docker: Docker Image Tests"
     steps:
