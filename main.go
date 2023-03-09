@@ -123,7 +123,13 @@ func main() {
 			},
 		},
 		clicommand.BootstrapCommand,
-		clicommand.RunJobCommand,
+		{
+			Name:  "job",
+			Usage: "Interact with Buildkite jobs",
+			Subcommands: []cli.Command{
+				clicommand.JobRunCommand,
+			},
+		},
 	}
 
 	app.ErrWriter = os.Stderr
