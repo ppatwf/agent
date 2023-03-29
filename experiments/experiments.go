@@ -9,7 +9,6 @@ var (
 		"job-api":                       {},
 		"kubernetes-exec":               {},
 		"ansi-timestamps":               {},
-		"git-mirrors":                   {},
 		"flock-file-locks":              {},
 		"resolve-commit-after-checkout": {},
 		"descending-spawn-priority":     {},
