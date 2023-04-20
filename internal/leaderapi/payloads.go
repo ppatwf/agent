@@ -1,10 +1,5 @@
 package leaderapi
 
-// Error response is the response body for any errors that occur
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
 // ValueResponse is the response body for endpoints that return a single value.
 type ValueResponse struct {
 	Value string `json:"value"`

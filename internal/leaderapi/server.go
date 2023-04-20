@@ -14,11 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// LeaderSocketPath is the path to the (singleton) leader socket.
-const LeaderSocketPath = ".buildkite-agent/agent-leader-sock"
-
-// Server hosts the singleton Unix domain socket used for implementing
-// the leader API.
+// Server hosts the Unix domain socket used for implementing the leader API.
 type Server struct {
 	Logger shell.Logger
 
@@ -27,17 +23,17 @@ type Server struct {
 	svr   *http.Server
 }
 
-// NewServer listens on the leader socket. Since the leader is the first
-// process to listen on the socket path, errors of type **TODO** can be ignored.
-func NewServer(path string) (*Server, error) {
+// NewServer listens on a socket at the given path.
+func NewServer(path string, logger shell.Logger) (*Server, error) {
 	ln, err := net.Listen("unix", path)
 	if err != nil {
 		return nil, err
 	}
 	svr := &http.Server{}
 	s := &Server{
-		locks: make(map[string]string),
-		svr:   svr,
+		Logger: logger,
+		locks:  make(map[string]string),
+		svr:    svr,
 	}
 	svr.Handler = s.router()
 	go svr.Serve(ln)
@@ -73,7 +69,7 @@ func (s *Server) getLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := &ValueResponse{
-		Value: s.load(key),
+		Value: s.lockLoad(key),
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		s.Logger.Errorf("Leader API: couldn't encode response body: %v", err)
@@ -93,7 +89,7 @@ func (s *Server) patchLock(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("couldn't decode request body: %v", err), http.StatusBadRequest)
 	}
 
-	v, ok := s.cas(key, req.Old, req.New)
+	v, ok := s.lockCAS(key, req.Old, req.New)
 	resp := &LockCASResponse{
 		Value:   v,
 		Swapped: ok,
@@ -103,16 +99,17 @@ func (s *Server) patchLock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// load atomically retrieves the current value for the lock.
-func (s *Server) load(key string) string {
+// lockLoad atomically retrieves the current value for the lock.
+func (s *Server) lockLoad(key string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.locks[key]
 }
 
-// cas atomically attempts to swap the old value for the key for a new value.
-// It reports whether the swap succeeded, returning the (new or existing) value.
-func (s *Server) cas(key, old, new string) (string, bool) {
+// lockCAS atomically attempts to swap the old value for the key for a new
+// value. It reports whether the swap succeeded, returning the (new or existing)
+// value.
+func (s *Server) lockCAS(key, old, new string) (string, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.locks[key] == old {
@@ -132,8 +129,8 @@ func loggerMiddleware(l shell.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-// HeadersMiddleware is a middleware that sets the common headers for all responses. At the moment, this is just
-// Content-Type: application/json.
+// HeadersMiddleware is a middleware that sets the common headers for all
+// responses. At the moment, this is just Content-Type: application/json.
 func headersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer next.ServeHTTP(w, r)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/buildkite/agent/v3/leaderapi"
+	"github.com/buildkite/agent/v3/internal/leaderapi"
 	"github.com/urfave/cli"
 )
 
@@ -25,13 +25,23 @@ Examples:
 
 `
 
-type LockReleaseConfig struct{}
+type LockReleaseConfig struct {
+	SocketsPath string `cli:"sockets-path" normalize:"filepath"`
+}
 
 var LockReleaseCommand = cli.Command{
 	Name:        "release",
 	Usage:       "Releases a previously-acquired lock",
 	Description: lockReleaseHelpDescription,
-	Action:      lockReleaseAction,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:   "sockets-path",
+			Value:  defaultSocketsPath(),
+			Usage:  "Directory where the agent will place sockets",
+			EnvVar: "BUILDKITE_SOCKETS_PATH",
+		},
+	},
+	Action: lockReleaseAction,
 }
 
 func lockReleaseAction(c *cli.Context) error {
