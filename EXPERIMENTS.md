@@ -85,7 +85,15 @@ The Job API is unavailable on windows agents running versions of windows prior t
 
 **Status:** Experimental while we iron out the API and test it out in the wild. We'll probably promote this to non-experiment soon™️.
 
-## `cancel-checkout`
+### `leader-api`
+
+Like `job-api`, this exposes a local API with primitives that can be used to solve local concurrency problems (such as multiple agents handling some shared local resource).
+
+The API is exposed via a Unix Domain Socket. Unlike the `job-api`, the path to the socket is not available via a environment variable - rather, there is a single (configurable) path on the system.
+
+**Status:** Experimental while we iron out the API and test it out in the wild. We'll probably promote this to non-experiment soon™.
+
+### `cancel-checkout`
 
 Don't retry git checkout when the job has been canceled during the checkout phase.
 
