@@ -15,7 +15,7 @@ var (
 		"descending-spawn-priority":     {},
 		"inbuilt-status-page":           {},
 		"cancel-checkout":               {},
-		"leader-api":                    {},
+		"agent-api":                     {},
 	}
 
 	experiments = make(map[string]bool, len(Available))

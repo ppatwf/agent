@@ -1,4 +1,4 @@
-package leaderapi
+package agentapi
 
 import (
 	"context"

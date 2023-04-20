@@ -1,4 +1,4 @@
-package leaderapi
+package agentapi
 
 // ValueResponse is the response body for endpoints that return a single value.
 type ValueResponse struct {
@@ -11,7 +11,7 @@ type LockCASRequest struct {
 	New string `json:"new"`
 }
 
-// LockCASRequest is the response body for the PATCH /lock/{key} endpoint.
+// LockCASResponse is the response body for the PATCH /lock/{key} endpoint.
 type LockCASResponse struct {
 	Value   string `json:"value"`
 	Swapped bool   `json:"swapped"`

@@ -1,4 +1,4 @@
-package leaderapi
+package agentapi
 
 import (
 	"context"
@@ -6,17 +6,29 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/buildkite/agent/v3/bootstrap/shell"
+	"github.com/buildkite/agent/v3/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// Server hosts the Unix domain socket used for implementing the leader API.
+// DefaultServerPath constructs the default path for the agent API socket.
+func DefaultServerPath(base string) string {
+	return filepath.Join(base, fmt.Sprintf("agent-%d.sock", os.Getpid()))
+}
+
+// LeaderPath returns the path to the socket pointing to the leader agent.
+func LeaderPath(base string) string {
+	return filepath.Join(base, "agent-leader.sock")
+}
+
+// Server hosts the Unix domain socket used for implementing the Agent API.
 type Server struct {
-	Logger shell.Logger
+	Logger logger.Logger
 
 	mu    sync.Mutex
 	locks map[string]string
@@ -24,7 +36,7 @@ type Server struct {
 }
 
 // NewServer listens on a socket at the given path.
-func NewServer(path string, logger shell.Logger) (*Server, error) {
+func NewServer(path string, logger logger.Logger) (*Server, error) {
 	ln, err := net.Listen("unix", path)
 	if err != nil {
 		return nil, err
@@ -72,7 +84,7 @@ func (s *Server) getLock(w http.ResponseWriter, r *http.Request) {
 		Value: s.lockLoad(key),
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		s.Logger.Errorf("Leader API: couldn't encode response body: %v", err)
+		s.Logger.Error("Leader API: couldn't encode response body: %v", err)
 	}
 }
 
@@ -95,7 +107,7 @@ func (s *Server) patchLock(w http.ResponseWriter, r *http.Request) {
 		Swapped: ok,
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		s.Logger.Errorf("Leader API: couldn't encode response body: %v", err)
+		s.Logger.Error("Leader API: couldn't encode response body: %v", err)
 	}
 }
 
@@ -119,11 +131,11 @@ func (s *Server) lockCAS(key, old, new string) (string, bool) {
 	return s.locks[key], false
 }
 
-func loggerMiddleware(l shell.Logger) func(http.Handler) http.Handler {
+func loggerMiddleware(l logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			t := time.Now()
-			defer l.Commentf("Leader API:\t%s\t%s\t%s", r.Method, r.URL.Path, time.Since(t))
+			defer l.Info("Leader API:\t%s\t%s\t%s", r.Method, r.URL.Path, time.Since(t))
 			next.ServeHTTP(w, r)
 		})
 	}

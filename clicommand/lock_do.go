@@ -6,7 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/buildkite/agent/v3/internal/leaderapi"
+	"github.com/buildkite/agent/v3/cliconfig"
+	"github.com/buildkite/agent/v3/internal/agentapi"
 	"github.com/urfave/cli"
 )
 
@@ -63,9 +64,25 @@ func lockDoAction(c *cli.Context) error {
 	}
 	key := c.Args()[0]
 
+	// Load the configuration
+	cfg := LockAcquireConfig{}
+	loader := cliconfig.Loader{
+		CLI:                    c,
+		Config:                 &cfg,
+		DefaultConfigFilePaths: DefaultConfigFilePaths(),
+	}
+	warnings, err := loader.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %s\n", err)
+		os.Exit(1)
+	}
+	for _, warning := range warnings {
+		fmt.Fprintln(c.App.ErrWriter, warning)
+	}
+
 	ctx := context.Background()
 
-	cli, err := leaderapi.NewClient(leaderapi.LeaderSocketPath)
+	cli, err := agentapi.NewClient(agentapi.LeaderPath(cfg.SocketsPath))
 	if err != nil {
 		fmt.Fprintf(c.App.ErrWriter, lockClientErrMessage, err)
 		os.Exit(1)

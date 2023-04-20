@@ -85,9 +85,10 @@ The Job API is unavailable on windows agents running versions of windows prior t
 
 **Status:** Experimental while we iron out the API and test it out in the wild. We'll probably promote this to non-experiment soon™️.
 
-### `leader-api`
+### `agent-api`
 
-Like `job-api`, this exposes a local API with primitives that can be used to solve local concurrency problems (such as multiple agents handling some shared local resource).
+Like `job-api`, this exposes a local API for interacting with the agent process.
+...with primitives that can be used to solve local concurrency problems (such as multiple agents handling some shared local resource).
 
 The API is exposed via a Unix Domain Socket. Unlike the `job-api`, the path to the socket is not available via a environment variable - rather, there is a single (configurable) path on the system.
 
