@@ -22,6 +22,7 @@ import (
 	"github.com/buildkite/agent/v3/cliconfig"
 	"github.com/buildkite/agent/v3/experiments"
 	"github.com/buildkite/agent/v3/hook"
+	"github.com/buildkite/agent/v3/leaderapi"
 	"github.com/buildkite/agent/v3/logger"
 	"github.com/buildkite/agent/v3/metrics"
 	"github.com/buildkite/agent/v3/process"
@@ -759,6 +760,17 @@ var AgentStartCommand = cli.Command{
 		// Sense check supported tracing backends, we don't want bootstrapped jobs to silently have no tracing
 		if _, has := tracetools.ValidTracingBackends[cfg.TracingBackend]; !has {
 			l.Fatal("The given tracing backend %q is not supported. Valid backends are: %q", cfg.TracingBackend, maps.Keys(tracetools.ValidTracingBackends))
+		}
+
+		if experiments.IsEnabled("leader-api") {
+			// Try to be the leader - no worries if not.
+			leaderSvr, err := leaderapi.NewServer(leaderapi.LeaderSocketPath)
+			if err != nil {
+				l.Warn("Couldn't become leader: %v", err)
+			}
+			if leaderSvr != nil {
+				defer leaderSvr.Shutdown(ctx)
+			}
 		}
 
 		// AgentConfiguration is the runtime configuration for an agent
